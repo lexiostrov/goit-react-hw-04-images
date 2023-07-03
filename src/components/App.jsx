@@ -50,108 +50,37 @@ export const App = () => {
     if (searchText) {
       setIsLoading(true);
 
-      getImages(searchText, 1)
+      getImages(searchText, page)
         .then(data => {
           if (data.totalHits === 0) {
             handleNoImagesFound();
           }
-          if (data.totalHits <= 12) {
+
+          if (data.totalHits <= 12 || Math.floor(data.totalHits / page) < 12) {
             handleEndOfSearchResults();
           }
+
           if (data.status === 'error') {
             return Promise.reject(data.message);
-          } else if (data.totalHits > 0) {
+          } else if (data.totalHits > 0 && page === 1) {
             setIsLoading(false);
             Notiflix.Notify.success(
               `Hooray! We found ${data.totalHits} images.`
             );
           }
+
           const imgArr = transformImageData(data);
-          setImages(imgArr);
+          if (page === 1) {
+            setImages(imgArr);
+          } else {
+            setImages(prevState => [...prevState, ...imgArr]);
+          }
         })
         .catch(error => {
           setError({ error });
         });
     }
-  }, [searchText]);
-
-  useEffect(() => {
-    if (page !== 1) {
-      setIsLoading(true);
-
-      getImages(searchText, page)
-        .then(data => {
-          if (data.totalHits === 0) {
-            handleEndOfSearchResults();
-          }
-
-          if (Math.floor(data.totalHits / page) < 12) {
-            handleEndOfSearchResults();
-          }
-
-          const imgArr = transformImageData(data);
-
-          setImages(prevState => [...prevState, ...imgArr]);
-        })
-        .catch(error => {
-          setError(error);
-        });
-    }
-  }, [page, searchText]);
-
-  // componentDidUpdate(prevProps, prevState) {
-  //   const searchText = this.state.searchText.trim();
-
-  //   if (prevState.searchText !== searchText && searchText) {
-  //     this.setState({ isLoading: true, page: 1 });
-
-  //     getImages(searchText, 1)
-  //       .then(data => {
-  //         if (data.totalHits === 0) {
-  //           this.handleNoImagesFound();
-  //         }
-  //         if (data.totalHits <= 12) {
-  //           this.handleEndOfSearchResults();
-  //         }
-  //         if (data.status === 'error') {
-  //           return Promise.reject(data.message);
-  //         } else if (data.totalHits > 0) {
-  //           this.setState({ isLoading: false });
-  //           Notiflix.Notify.success(
-  //             `Hooray! We found ${data.totalHits} images.`
-  //           );
-  //         }
-  //         const imgArr = this.transformImageData(data);
-  //         this.setState({
-  //           images: imgArr,
-  //         });
-  //       })
-  //       .catch(error => {
-  //         this.setState({ error });
-  //       });
-  //   }
-
-  //   if (prevState.page !== this.state.page && this.state.page !== 1) {
-  //     this.setState({ isLoading: true });
-  //     getImages(searchText, this.state.page)
-  //       .then(data => {
-  //         if (data.totalHits === 0) {
-  //           this.handleNoImagesFound();
-  //         }
-  //         if (Math.floor(data.totalHits / this.state.page) < 12) {
-  //           this.handleEndOfSearchResults();
-  //         }
-
-  //         const imgArr = this.transformImageData(data);
-  //         this.setState(prevState => ({
-  //           images: [...prevState.images, ...imgArr],
-  //         }));
-  //       })
-  //       .catch(error => {
-  //         this.setState({ error });
-  //       });
-  //   }
-  // }
+  }, [searchText, page]);
 
   const nextPage = () => {
     setPage(prevState => prevState + 1);
